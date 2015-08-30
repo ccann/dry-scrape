@@ -41,16 +41,17 @@
                  (first %)))
          (map string/trim))))
 
-(defn goal? [s] (re-find #"goal scored" (string/lower-case s)))
+(defn point? [s] (re-find #"goal scored" (string/lower-case s)))
+(defn assist? [s])
 
 
-(defn get-goals
+(defn get-points
   [coll]
-  (filter goal? coll))
+  (filter point? coll))
 
 (defn format-game-events
   [events]
-  (let [goal? #(re-find #"([0-9]+)" %)
+  (let [point? #(re-find #"([0-9]+)" %)
         assists? #(re-find #"Assists" %)]
     nil
     ))
@@ -59,7 +60,7 @@
 
 (defn -main
   [& args]
-  (clojure.pprint/pprint (get-goals (parse-play-by-play (first args)))))
+  (clojure.pprint/pprint (get-points (parse-play-by-play (first args)))))
 
 
 
