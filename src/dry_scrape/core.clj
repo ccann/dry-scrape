@@ -25,6 +25,29 @@
          (vec)
          )))
 
+(defn parse-play-by-play
+  [game-id]
+  (let [url (str "http://espn.go.com/nhl/playbyplay?gameId=" game-id "&period=0")
+        site-htree (-> (cl/get url) :body parse as-hickory)
+        elems (s/select (s/descendant (s/class "story-container")
+                                      (s/and (s/tag :div) (s/nth-child 4))
+                                      (s/and (s/tag :div) (s/class "mod-content"))
+                                      (s/and (s/tag :td)
+                                             (s/nth-child 3))) site-htree)]
+    (->> elems
+         (map :content)
+         (map #(if (coll? (first %))
+                 (first (:content (first %)))
+                 (first %)))
+         (map string/trim))))
+
+(defn goal? [s] (re-find #"goal scored" (string/lower-case s)))
+
+
+(defn get-goals
+  [coll]
+  (filter goal? coll))
+
 (defn format-game-events
   [events]
   (let [goal? #(re-find #"([0-9]+)" %)
@@ -36,7 +59,7 @@
 
 (defn -main
   [& args]
-  (clojure.pprint/pprint (get-game-events (first args))))
+  (clojure.pprint/pprint (get-goals (parse-play-by-play (first args)))))
 
 
 
