@@ -6,6 +6,8 @@
             )
   (:gen-class))
 
+(def site-htree )
+
 
 
 (defn get-game-events
@@ -25,10 +27,26 @@
          (vec)
          )))
 
-(defn parse-play-by-play
-  [game-id]
-  (let [url (str "http://espn.go.com/nhl/playbyplay?gameId=" game-id "&period=0")
+(defn parse-by-date
+  [date]
+  (let [url (str "http://espn.go.com/nhl/scoreboard?date=" date)
         site-htree (-> (cl/get url) :body parse as-hickory)
+        elems (s/select (s/descendant (s/class "span-4")
+                                      (s/or (s/id :gamesLeft)
+                                            (s/id :gamesRight))
+                                      (s/class "expand-gameLinks")
+                                      (s/tag :a)) site-htree) ]
+    (->> elems
+         (filter #(= (:content %) ["Play‑By‑Play"]))
+         (map #(:href (:attrs %)))
+         (map #(str "http://espn.go.com" %))
+         ))
+    
+    )
+
+(defn parse-play-by-play
+  [url]
+  (let [site-htree (-> (cl/get url) :body parse as-hickory)
         elems (s/select (s/descendant (s/class "story-container")
                                       (s/and (s/tag :div) (s/nth-child 4))
                                       (s/and (s/tag :div) (s/class "mod-content"))
@@ -55,12 +73,18 @@
         assists? #(re-find #"Assists" %)]
     nil
     ))
+
+
     
 
 
 (defn -main
   [& args]
-  (clojure.pprint/pprint (get-points (parse-play-by-play (first args)))))
+  (let [urls (parse-by-date (first args))]
+    (clojure.pprint/pprint (map parse-play-by-play urls))))
+
+
+  ;; (clojure.pprint/pprint (get-points (parse-play-by-play (first args)))))
 
 
 
